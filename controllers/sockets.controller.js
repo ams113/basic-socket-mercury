@@ -1,20 +1,45 @@
-const { Socket } = require("socket.io");
+const TicketCtrl = require("../models/ticket-ctrl");
+
+const ticketCtrl = new TicketCtrl();
 
 
 const socketCtrl = ( socket ) => {
 
-    console.log('client [connect]'.green, socket.id);
+    // When a client is connected
+    socket.emit( 'last-ticket', ticketCtrl.last );
+    socket.emit( 'current-status', ticketCtrl.lastFour );
+    socket.emit( 'tickets-pending', ticketCtrl.tickets.length );
+    
 
-    socket.on('disconnect', () => {
-        console.log('client [disconnect]'.yellow, socket.id);
+    socket.on('next-ticket', ( payload, callback ) => {
+
+        const giveAway = ticketCtrl.nextTicket();
+        callback( giveAway );
+
+        socket.broadcast.emit( 'tickets-pending', ticketCtrl.tickets.length );
     });
 
-    socket.on('send-msg', ( payload, callback ) => {
-        const id = 56789;
-        callback( id );
+    socket.on('attend-ticket', ( { desk }, callback ) => {
 
-        socket.broadcast.emit('send-msg', payload );
+        if ( !desk ) {
+            return callback( { ok: false, msg: 'Desk is required'} );
+        }
+ 
+        const ticket = ticketCtrl.attendTicket( desk );
+        socket.emit( 'tickets-pending', ticketCtrl.tickets.length );
+        socket.broadcast.emit( 'tickets-pending', ticketCtrl.tickets.length );
+
+        socket.broadcast.emit( 'current-status', ticketCtrl.lastFour );
+
+        if ( !ticket ){
+            callback( { ok: false, msg: 'There are no pending tickets'} );
+        } else {
+            callback( { ok: true, ticket } );
+        }
+
+            
     });
+
 
 };
 

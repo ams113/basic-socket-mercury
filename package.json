@@ -1,6 +1,6 @@
 {
-  "name": "08-websocket-server",
-  "version": "0.0.1",
+  "name": "socket-q",
+  "version": "1.0.0",
   "description": "",
   "main": "app.js",
   "scripts": {
